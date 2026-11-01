@@ -1,0 +1,33 @@
+# Cấu hình gitleaks (https://github.com/gitleaks/gitleaks)
+# Dùng bởi pre-commit hook (nếu máy có gitleaks) và workflow CI secret-scan.
+
+title = "vietnam-quiz gitleaks config"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "spring-hardcoded-password"
+description = "Mật khẩu hard-code trong cấu hình Spring (không dùng ${ENV})"
+regex = '''(?i)(password|secret|jwt[._-]?secret|api[._-]?key)\s*[:=]\s*["']?([^\s"'$\{][^\s"']{7,})'''
+secretGroup = 2
+path = '''\.(ya?ml|properties)$'''
+
+[[rules]]
+id = "jdbc-url-with-credentials"
+description = "JDBC URL chứa user:password"
+regex = '''jdbc:[a-z]+://[^\s:]+:([^\s@$]+)@'''
+secretGroup = 1
+
+[allowlist]
+description = "Bỏ qua file mẫu và chính file cấu hình hook"
+paths = [
+  '''\.env\.example$''',
+  '''\.env\.sample$''',
+  '''\.env\.template$''',
+  '''^\.githooks/''',
+  '''^\.gitleaks\.toml$''',
+]
+regexes = [
+  '''\$\{[A-Z0-9_]+(:[^}]*)?\}''',
+]

@@ -1,0 +1,74 @@
+# =========================================================
+#  SECRET / KEY BẢO MẬT — tuyệt đối không commit
+# =========================================================
+# Biến môi trường — danh sách biến nằm trong infra/init-env.sh
+.env
+.env.*
+*.env
+
+# Private key, chứng chỉ, keystore
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa*
+id_ed25519*
+deploy_key*
+
+# Cấu hình Spring chứa thông tin thật (chỉ commit application*.yml dùng ${ENV})
+application-local.yml
+application-local.properties
+application-secret*.yml
+
+# Docker override thường chứa cấu hình riêng máy
+docker-compose.override.yml
+compose.override.yml
+infra/certbot/
+
+# =========================================================
+#  BACKEND — Java / Maven
+# =========================================================
+target/
+*.class
+*.jar
+*.war
+hs_err_pid*
+
+# =========================================================
+#  FRONTEND — Node / React / Vite
+# =========================================================
+node_modules/
+dist/
+.vite/
+*.local
+coverage/
+.eslintcache
+npm-debug.log*
+
+# =========================================================
+#  INFRA — trạng thái deploy trên server
+# =========================================================
+infra/.deployed-version
+infra/.nginx-templates.sha
+loadtest/results/
+
+# =========================================================
+#  LOG / TẠM / IDE / OS
+# =========================================================
+logs/
+*.log
+*.tmp
+.idea/
+*.iml
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.settings/
+.project
+.classpath
+.factorypath
+bin/
+.DS_Store
+Thumbs.db

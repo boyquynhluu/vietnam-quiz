@@ -1,0 +1,9 @@
+# Profile prod: VPS (infra/docker-compose.prod.yml). Frontend cùng domain nên không cần CORS.
+server:
+  error:
+    include-stacktrace: never
+    include-message: never
+
+logging:
+  level:
+    root: INFO

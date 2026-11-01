@@ -1,0 +1,2 @@
+# Phát hiện của gitleaks đã kiểm tra là KHÔNG phải secret (fingerprint: <commit>:<file>:<rule>:<dòng>).
+# Thêm dòng mới ở đây chỉ sau khi đã xem tận mắt — secret thật thì phải xoá khỏi code + đổi secret, không ignore.

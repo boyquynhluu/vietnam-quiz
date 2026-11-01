@@ -1,0 +1,23 @@
+# Chuẩn hoá line ending
+* text=auto eol=lf
+
+# Script shell / hook phải giữ LF để chạy được trên Git Bash, Linux, Docker
+*.sh text eol=lf
+.githooks/* text eol=lf
+
+# Script Windows
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# File nhị phân
+*.jar binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.pdf binary

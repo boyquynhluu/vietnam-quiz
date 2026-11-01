@@ -1,0 +1,8 @@
+# Profile dev: máy lập trình (mvn spring-boot:run hoặc infra/docker-compose.dev.yml)
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:4173}
+
+logging:
+  level:
+    com.quiz: DEBUG

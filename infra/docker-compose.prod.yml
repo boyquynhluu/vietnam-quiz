@@ -1,0 +1,97 @@
+# Môi trường PRODUCTION trên VPS.
+#   ./init-env.sh prod                                          (lần đầu: tạo infra/.env — KHÔNG commit, điền tên miền)
+#   ./init-letsencrypt.sh                                       (lần đầu: xin chứng chỉ HTTPS)
+#   docker compose -f docker-compose.prod.yml up -d --build      (Compose tự đọc infra/.env)
+#   Hoặc qua CI/CD (.github/workflows/cd.yml): image build sẵn trên GitHub, server chỉ kéo về — infra/deploy.sh <tag>
+#
+# Khác dev:
+#   - Chỉ nginx mở cổng 80/443 ra internet; backend / frontend chỉ nằm trong mạng nội bộ Docker.
+#     Docker tự ghi iptables nên UFW KHÔNG chặn được cổng đã publish — đừng publish thêm cổng.
+#   - Backend profile "prod": không CORS, không trả stacktrace.
+#   - restart: unless-stopped, giới hạn RAM, xoay vòng log, phiên bản image cố định.
+name: vietnam-quiz
+
+x-restart: &restart
+  restart: unless-stopped
+
+# Log json-file mặc định phình mãi tới đầy đĩa — giữ 3 file x 10 MB mỗi container
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+networks:
+  quiz-network:
+    driver: bridge
+
+volumes:
+  certbot-etc:
+  certbot-www:
+
+services:
+  # Reverse proxy + HTTPS. Template ./nginx/templates được render với ${DOMAIN} khi khởi động; vòng lặp
+  # reload nginx mỗi 6 giờ để nhận chứng chỉ certbot vừa gia hạn mà không gián đoạn.
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: vietnam-quiz-nginx
+    <<: [*restart, *logging]
+    mem_limit: 64m
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?Thiếu DOMAIN trong infra/.env}
+    volumes:
+      - ./nginx/templates:/etc/nginx/templates:ro
+      - certbot-etc:/etc/letsencrypt:ro
+      - certbot-www:/var/www/certbot:ro
+    command: /bin/sh -c "while :; do sleep 6h & wait $$!; nginx -s reload; done & exec /docker-entrypoint.sh nginx -g 'daemon off;'"
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - quiz-network
+
+  # Gia hạn chứng chỉ (webroot qua nginx :80) 2 lần/ngày; certbot chỉ gia hạn thật khi còn < 30 ngày.
+  certbot:
+    image: certbot/certbot:v2.11.0
+    container_name: vietnam-quiz-certbot
+    <<: [*restart, *logging]
+    mem_limit: 64m
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $$!; done"
+
+  backend:
+    build: ../backend
+    image: ${IMAGE_PREFIX:-vietnam-quiz}/backend:${APP_VERSION:-latest}
+    container_name: vietnam-quiz-backend
+    <<: [*restart, *logging]
+    mem_limit: ${BACKEND_MEM_LIMIT:-512m}
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      TZ: Asia/Ho_Chi_Minh
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
+    networks:
+      - quiz-network
+
+  frontend:
+    build:
+      context: ../frontend
+      args:
+        # Cùng domain: trình duyệt gọi https://${DOMAIN}/api, nginx chuyển sang backend
+        VITE_API_BASE_URL: ""
+    image: ${IMAGE_PREFIX:-vietnam-quiz}/frontend:${APP_VERSION:-latest}
+    container_name: vietnam-quiz-frontend
+    <<: [*restart, *logging]
+    mem_limit: 64m
+    networks:
+      - quiz-network
