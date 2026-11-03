@@ -47,19 +47,19 @@ git config core.hooksPath .githooks
 | Compose | `infra/docker-compose.dev.yml` | `infra/docker-compose.prod.yml` |
 | File env | `infra/.env` tạo bằng `./init-env.sh dev` | `infra/.env` trên VPS, tạo bằng `./init-env.sh prod` |
 | Profile Spring | `dev`: CORS cho Vite, log DEBUG | `prod`: không CORS, không trả stacktrace |
-| Cổng mở | `127.0.0.1`: backend 8080, debug 5005 | Chỉ nginx 80/443 |
-| Frontend | `npm run dev` (Vite proxy `/api` -> 8080) | Image nginx tĩnh, nginx ngoài cùng làm HTTPS + chuyển `/api` sang backend |
+| Cổng mở | `127.0.0.1`: backend `BACKEND_PORT` (8080), debug `DEBUG_PORT` (5005) | Chỉ nginx 80/443 |
+| Frontend | `npm run dev` (Vite proxy `/api` -> `BACKEND_PORT`) | Image nginx tĩnh, nginx ngoài cùng làm HTTPS + chuyển `/api` sang backend |
 
 ### Dev
 
 ```bash
 bash infra/init-env.sh dev                                       # tạo infra/.env
-docker compose -f infra/docker-compose.dev.yml up -d --build      # backend http://localhost:8080
+docker compose -f infra/docker-compose.dev.yml up -d --build      # backend http://localhost:$BACKEND_PORT (mặc định 8080)
 cd frontend && npm install && npm run dev                         # http://localhost:5173
 ```
 
 - Không dùng Docker: `cd backend && mvn spring-boot:run` (mặc định profile `dev`).
-- Debug: gắn IDE vào `localhost:5005`.
+- Debug: gắn IDE vào `localhost:$DEBUG_PORT` (mặc định 5005). Trùng cổng với project khác thì đổi `BACKEND_PORT` / `DEBUG_PORT` trong `infra/.env`.
 - Test: `cd backend && mvn verify`; lint frontend: `cd frontend && npm run lint`.
 
 ### Production (VPS Ubuntu + Docker)

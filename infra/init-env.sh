@@ -38,6 +38,9 @@ APP_ENV=${ENV_NAME}
 # Chỉ dev: nguồn frontend được gọi API (production cùng domain, không cần CORS).
 CORS_ALLOWED_ORIGINS=${CORS}
 BACKEND_MEM_LIMIT=512m
+# Chỉ dev: cổng trên máy lập trình (đổi nếu trùng với project khác). Vite proxy đọc BACKEND_PORT.
+BACKEND_PORT=8080
+DEBUG_PORT=5005
 APP_VERSION=latest
 
 # --- Tên miền / HTTPS (chỉ production) ---

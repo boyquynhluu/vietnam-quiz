@@ -19,9 +19,9 @@ class QuizServiceTest {
     QuizService quizService;
 
     @Test
-    void loadsAllFortyQuestions() {
-        assertThat(quizService.questions(null, false, 0)).hasSize(40);
-        assertThat(quizService.questions(Category.NATURE, true, 0)).hasSize(10);
+    void loadsAllQuestions() {
+        assertThat(quizService.questions(null, false, 0)).hasSize(300);
+        assertThat(quizService.questions(Category.NATURE, true, 0)).hasSize(75);
         assertThat(quizService.questions(null, true, 5)).hasSize(5);
     }
 
