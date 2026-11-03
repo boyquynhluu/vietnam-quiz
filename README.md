@@ -87,22 +87,36 @@ Sau đó deploy qua CI/CD, hoặc build tại server: `docker compose -f docker-
 
 - **`ci.yml`** (mọi push / PR): `mvn verify`, `npm run lint` + `npm run build`, `nginx -t` cho template; PR build thử 2 image.
 - **`cd.yml`** (push lên `main` hoặc Run workflow): chạy lại CI → build & đẩy
-  `ghcr.io/<owner>/<repo>/backend` và `/frontend` (tag `yyyyMMdd-<sha>` + `latest`) → SSH vào VPS chạy `infra/deploy.sh <tag>`:
-  kéo image, khởi động lại, chờ backend healthy; không healthy thì tự quay về phiên bản trước.
+  `ghcr.io/<owner>/<repo>/backend` và `/frontend` (tag `yyyyMMdd-<sha>` + `latest`) → vào tailnet qua Tailscale →
+  chép image sang VPS (`docker save | ssh vps docker load`) → chạy `infra/deploy.sh <tag>`:
+  khởi động lại, chờ backend healthy; không healthy thì tự quay về phiên bản trước.
 - **`secret-scan.yml`**: gitleaks + chặn file build / `.env` / key bị commit.
+
+> **Vì sao cần Tailscale:** VPS chỉ có IPv6, runner GitHub chỉ có IPv4, và `ghcr.io` cũng không có IPv6.
+> Runner vào tailnet tạm thời (relay DERP của Tailscale chạy được trên IPv6) để SSH, rồi tự đẩy image sang VPS.
+
+Chuẩn bị Tailscale (một lần):
+
+1. Trên VPS: `curl -fsSL https://tailscale.com/install.sh | sh && sudo tailscale up`, rồi `tailscale ip -4` lấy IP `100.x.y.z`.
+2. Trong [admin console](https://login.tailscale.com/admin/acls/file), thêm tag vào policy file:
+   `"tagOwners": { "tag:ci": ["autogroup:admin"] }` (ACL mặc định cho phép mọi node trong tailnet SSH vào VPS).
+3. Settings → OAuth clients → tạo client có scope **Auth Keys (write)**, tag `tag:ci` → lấy client ID / secret.
 
 Tạo SSH key riêng cho deploy (trên máy bạn):
 
 ```bash
 ssh-keygen -t ed25519 -f deploy_key -N ""
-ssh-keyscan -H <IP_VPS>          # kết quả dùng cho VPS_KNOWN_HOSTS
 ```
+
+Lấy `VPS_KNOWN_HOSTS` (chạy trên VPS, theo đúng IP Tailscale dùng làm `VPS_HOST`): `ssh-keyscan -H "$(tailscale ip -4)"`
 
 Cấu hình trong GitHub: Settings → Environments → `production`:
 
 | Loại | Tên | Giá trị |
 |---|---|---|
-| Secret | `VPS_HOST` | IP hoặc hostname VPS |
+| Secret | `TS_OAUTH_CLIENT_ID` | OAuth client ID của Tailscale |
+| Secret | `TS_OAUTH_SECRET` | OAuth client secret của Tailscale |
+| Secret | `VPS_HOST` | IP Tailscale của VPS (`100.x.y.z`) |
 | Secret | `VPS_USER` | `deploy` |
 | Secret | `VPS_SSH_KEY` | nội dung file `deploy_key` (private key) |
 | Secret | `VPS_KNOWN_HOSTS` | kết quả `ssh-keyscan` |

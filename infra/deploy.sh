@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Deploy 1 phiên bản image lên VPS. GitHub Actions (cd.yml) gọi qua SSH:
+# Deploy 1 phiên bản image lên VPS. GitHub Actions (cd.yml) chép image sẵn bằng `docker load` rồi gọi qua SSH:
+#   IMAGE_PREFIX=ghcr.io/<owner>/<repo> bash infra/deploy.sh <tag>
+# Máy có đường tới ghcr.io (IPv4) và repo private: truyền token qua stdin để kéo image:
 #   printf '%s' "$TOKEN" | GHCR_USER=<user> IMAGE_PREFIX=ghcr.io/<owner>/<repo> bash infra/deploy.sh <tag>
 # Gọi tay trên server (image đã có sẵn / repo public):
 #   IMAGE_PREFIX=ghcr.io/<owner>/<repo> bash infra/deploy.sh <tag>
@@ -43,8 +45,13 @@ wait_healthy() {
 }
 
 # 2. Kéo image mới, khởi động lại (nginx / certbot giữ nguyên nếu không đổi)
-log "Kéo image $PREFIX/{backend,frontend}:$TAG"
-run "$TAG" pull backend frontend
+#    CD chép image sẵn bằng `docker load` (VPS chỉ IPv6, ghcr.io không có IPv6) -> có rồi thì không kéo
+if docker image inspect "$PREFIX/backend:$TAG" "$PREFIX/frontend:$TAG" >/dev/null 2>&1; then
+  log "Image $PREFIX/{backend,frontend}:$TAG đã có sẵn — bỏ qua pull"
+else
+  log "Kéo image $PREFIX/{backend,frontend}:$TAG"
+  run "$TAG" pull backend frontend
+fi
 log "Khởi động phiên bản $TAG"
 run "$TAG" up -d --no-build --remove-orphans
 
