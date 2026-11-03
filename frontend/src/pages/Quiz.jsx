@@ -9,7 +9,11 @@ function formatTime(seconds) {
   return `${m}:${s}`;
 }
 
-export default function Quiz({ settings, onFinish, onQuit }) {
+/**
+ * load(settings) -> Promise<[{ id, question, options }]>, grade(answers) -> Promise<SubmitResponse>.
+ * Mặc định gọi API backend; trang ôn thi truyền hàm chấm tại chỗ.
+ */
+export default function Quiz({ settings, onFinish, onQuit, load = getQuestions, grade = submitAnswers }) {
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
   const [index, setIndex] = useState(0);
@@ -19,11 +23,11 @@ export default function Quiz({ settings, onFinish, onQuit }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    getQuestions(settings)
+    load(settings)
       .then(setQuestions)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [settings]);
+  }, [settings, load]);
 
   useEffect(() => {
     const timer = setInterval(() => setSeconds((s) => s + 1), 1000);
@@ -49,7 +53,7 @@ export default function Quiz({ settings, onFinish, onQuit }) {
     try {
       // Send every question in display order; unanswered ones are -1
       const payload = questions.map((item) => ({ questionId: item.id, chosen: answers[item.id] ?? -1 }));
-      const result = await submitAnswers(payload);
+      const result = await grade(payload);
       onFinish({ ...result, seconds });
     } catch (e) {
       setError(e.message);
