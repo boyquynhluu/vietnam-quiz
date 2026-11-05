@@ -1,4 +1,4 @@
-# Profile prod: VPS (infra/docker-compose.prod.yml). Frontend cùng domain nên không cần CORS.
+# Profile prod: EC2 (infra/docker-compose.prod.yml). Frontend cùng domain nên không cần CORS.
 server:
   error:
     include-stacktrace: never

@@ -1,4 +1,4 @@
-# Môi trường PRODUCTION trên VPS.
+# Môi trường PRODUCTION trên EC2.
 #   ./init-env.sh prod                                          (lần đầu: tạo infra/.env — KHÔNG commit, điền tên miền)
 #   ./init-letsencrypt.sh                                       (lần đầu: xin chứng chỉ HTTPS)
 #   docker compose -f docker-compose.prod.yml up -d --build      (Compose tự đọc infra/.env)
@@ -25,9 +25,9 @@ x-logging: &logging
 networks:
   quiz-network:
     driver: bridge
-    # VPS chỉ có IPv6: bật IPv6 cho mạng để Docker chuyển cổng IPv6 qua ip6tables và nginx thấy IP thật của khách
+    # Khi server có IPv6: Docker chuyển cổng IPv6 qua ip6tables và nginx thấy IP thật của khách
     # (nếu không, docker-proxy đổi mọi khách IPv6 thành IP gateway -> limit_req theo IP gộp chung mọi người).
-    # Cần Docker Engine >= 27.
+    # Server chỉ có IPv4 thì không ảnh hưởng. Cần Docker Engine >= 27.
     enable_ipv6: true
 
 volumes:

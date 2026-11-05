@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Tạo file infra/.env (file env DUY NHẤT của dự án, đã nằm trong .gitignore — KHÔNG commit).
 #   ./init-env.sh dev     trên máy lập trình  (dùng với docker-compose.dev.yml)
-#   ./init-env.sh prod    TRÊN VPS            (dùng với docker-compose.prod.yml)
+#   ./init-env.sh prod    TRÊN EC2            (dùng với docker-compose.prod.yml)
 # Docker Compose tự đọc infra/.env (cùng thư mục với file compose), không cần --env-file.
 # Danh sách biến bên dưới là "chuẩn" của dự án: thêm biến mới thì thêm vào đây.
 set -euo pipefail
